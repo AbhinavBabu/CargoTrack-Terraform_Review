@@ -123,7 +123,7 @@ async function main() {
       daysAgo: 7,
     });
 
-    if ([ShipmentStatus.PICKED_UP, ShipmentStatus.IN_TRANSIT, ShipmentStatus.OUT_FOR_DELIVERY, ShipmentStatus.DELIVERED, ShipmentStatus.DELAYED].includes(shipmentData.status)) {
+    if (([ShipmentStatus.PICKED_UP, ShipmentStatus.IN_TRANSIT, ShipmentStatus.OUT_FOR_DELIVERY, ShipmentStatus.DELIVERED, ShipmentStatus.DELAYED] as ShipmentStatus[]).includes(shipmentData.status)) {
       events.push({
         status: ShipmentStatus.PICKED_UP,
         description: 'Package picked up by carrier',
@@ -132,7 +132,7 @@ async function main() {
       });
     }
 
-    if ([ShipmentStatus.IN_TRANSIT, ShipmentStatus.OUT_FOR_DELIVERY, ShipmentStatus.DELIVERED, ShipmentStatus.DELAYED].includes(shipmentData.status)) {
+    if (([ShipmentStatus.IN_TRANSIT, ShipmentStatus.OUT_FOR_DELIVERY, ShipmentStatus.DELIVERED, ShipmentStatus.DELAYED] as ShipmentStatus[]).includes(shipmentData.status)) {
       events.push({
         status: ShipmentStatus.IN_TRANSIT,
         description: 'Package is in transit',
@@ -150,7 +150,7 @@ async function main() {
       });
     }
 
-    if ([ShipmentStatus.OUT_FOR_DELIVERY, ShipmentStatus.DELIVERED].includes(shipmentData.status)) {
+    if (([ShipmentStatus.OUT_FOR_DELIVERY, ShipmentStatus.DELIVERED] as ShipmentStatus[]).includes(shipmentData.status)) {
       events.push({
         status: ShipmentStatus.OUT_FOR_DELIVERY,
         description: 'Package is out for delivery',

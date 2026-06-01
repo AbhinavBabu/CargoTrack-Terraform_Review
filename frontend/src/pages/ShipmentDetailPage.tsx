@@ -1,4 +1,4 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api';
 import { Shipment } from '../types';
@@ -8,7 +8,6 @@ import DocumentUpload from '../components/DocumentUpload';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft,
-  Edit,
   XCircle,
   MapPin,
   Weight,
@@ -16,6 +15,7 @@ import {
   User,
   Package,
   Copy,
+  Truck,
 } from 'lucide-react';
 
 export default function ShipmentDetailPage() {
@@ -52,8 +52,8 @@ export default function ShipmentDetailPage() {
   if (isLoading) {
     return (
       <Layout>
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <div className="flex justify-center py-16">
+          <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
         </div>
       </Layout>
     );
@@ -62,8 +62,9 @@ export default function ShipmentDetailPage() {
   if (!shipment) {
     return (
       <Layout>
-        <div className="text-center py-12">
-          <p className="text-slate-500">Shipment not found</p>
+        <div className="text-center py-16">
+          <Package className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+          <p className="text-sm text-slate-500">Shipment not found</p>
         </div>
       </Layout>
     );
@@ -71,19 +72,40 @@ export default function ShipmentDetailPage() {
 
   const canEdit = !['DELIVERED', 'CANCELLED'].includes(shipment.status);
 
+  const infoItems = [
+    { icon: User, label: 'Sender', value: shipment.senderName },
+    { icon: User, label: 'Receiver', value: shipment.receiverName },
+    { icon: Package, label: 'Type', value: shipment.shipmentType },
+    { icon: MapPin, label: 'Origin', value: shipment.origin },
+    { icon: MapPin, label: 'Destination', value: shipment.destination },
+    { icon: Weight, label: 'Weight', value: `${shipment.weight} kg` },
+    ...(shipment.estimatedDeliveryDate ? [{
+      icon: Calendar, label: 'Est. Delivery',
+      value: new Date(shipment.estimatedDeliveryDate).toLocaleDateString(),
+    }] : []),
+    { icon: Calendar, label: 'Created', value: new Date(shipment.createdAt).toLocaleDateString() },
+  ];
+
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <button onClick={() => navigate('/shipments')} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-2">
-              <ArrowLeft className="w-4 h-4" />
+            <button
+              onClick={() => navigate('/shipments')}
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 mb-2 transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
               Back to Shipments
             </button>
-            <h1 className="text-2xl font-bold text-slate-900">{shipment.title}</h1>
-            <div className="flex items-center gap-3 mt-2">
-              <button onClick={copyTracking} className="flex items-center gap-1.5 text-sm font-mono text-primary-600 hover:text-primary-700">
+            <h1 className="text-xl font-bold text-slate-100">{shipment.title}</h1>
+            <div className="flex items-center gap-3 mt-1.5">
+              <button
+                onClick={copyTracking}
+                className="flex items-center gap-1.5 text-xs font-mono text-amber-400 hover:text-amber-300 transition-colors"
+              >
+                <Truck className="w-3 h-3" />
                 {shipment.trackingNumber}
                 <Copy className="w-3 h-3" />
               </button>
@@ -91,82 +113,34 @@ export default function ShipmentDetailPage() {
             </div>
           </div>
           {canEdit && (
-            <div className="flex items-center gap-2">
-              <button onClick={handleCancel} className="px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2">
-                <XCircle className="w-4 h-4" />
-                Cancel
-              </button>
-            </div>
+            <button
+              onClick={handleCancel}
+              className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 text-red-400 border border-red-500/20 text-sm font-medium rounded-lg hover:bg-red-500/20 transition-colors self-start"
+            >
+              <XCircle className="w-4 h-4" />
+              Cancel Shipment
+            </button>
           )}
         </div>
 
-        {/* Shipment Info */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Shipment Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="flex items-start gap-3">
-              <User className="w-5 h-5 text-slate-400 mt-0.5" />
-              <div>
-                <p className="text-xs text-slate-500">Sender</p>
-                <p className="text-sm font-medium text-slate-900">{shipment.senderName}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <User className="w-5 h-5 text-slate-400 mt-0.5" />
-              <div>
-                <p className="text-xs text-slate-500">Receiver</p>
-                <p className="text-sm font-medium text-slate-900">{shipment.receiverName}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Package className="w-5 h-5 text-slate-400 mt-0.5" />
-              <div>
-                <p className="text-xs text-slate-500">Type</p>
-                <p className="text-sm font-medium text-slate-900">{shipment.shipmentType}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
-              <div>
-                <p className="text-xs text-slate-500">Origin</p>
-                <p className="text-sm font-medium text-slate-900">{shipment.origin}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
-              <div>
-                <p className="text-xs text-slate-500">Destination</p>
-                <p className="text-sm font-medium text-slate-900">{shipment.destination}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Weight className="w-5 h-5 text-slate-400 mt-0.5" />
-              <div>
-                <p className="text-xs text-slate-500">Weight</p>
-                <p className="text-sm font-medium text-slate-900">{shipment.weight} kg</p>
-              </div>
-            </div>
-            {shipment.estimatedDeliveryDate && (
-              <div className="flex items-start gap-3">
-                <Calendar className="w-5 h-5 text-slate-400 mt-0.5" />
-                <div>
-                  <p className="text-xs text-slate-500">Estimated Delivery</p>
-                  <p className="text-sm font-medium text-slate-900">{new Date(shipment.estimatedDeliveryDate).toLocaleDateString()}</p>
+        {/* Shipment Info Grid */}
+        <div className="bg-slate-800/60 rounded-xl border border-slate-700/50 p-5">
+          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Shipment Details</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {infoItems.map((item) => (
+              <div key={item.label} className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <item.icon className="w-3.5 h-3.5 text-slate-600" />
+                  <p className="text-xs text-slate-600">{item.label}</p>
                 </div>
+                <p className="text-sm font-medium text-slate-200 pl-5">{item.value}</p>
               </div>
-            )}
-            <div className="flex items-start gap-3">
-              <Calendar className="w-5 h-5 text-slate-400 mt-0.5" />
-              <div>
-                <p className="text-xs text-slate-500">Created</p>
-                <p className="text-sm font-medium text-slate-900">{new Date(shipment.createdAt).toLocaleDateString()}</p>
-              </div>
-            </div>
+            ))}
           </div>
           {shipment.description && (
-            <div className="mt-4 pt-4 border-t border-slate-100">
-              <p className="text-xs text-slate-500 mb-1">Description</p>
-              <p className="text-sm text-slate-700">{shipment.description}</p>
+            <div className="mt-4 pt-4 border-t border-slate-700/50">
+              <p className="text-xs text-slate-600 mb-1">Description</p>
+              <p className="text-sm text-slate-400">{shipment.description}</p>
             </div>
           )}
         </div>

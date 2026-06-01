@@ -2,12 +2,27 @@ import dotenv from 'dotenv';
 import type { SignOptions } from 'jsonwebtoken';
 dotenv.config();
 
+// Build DATABASE_URL from individual env vars if DATABASE_URL is not explicitly set.
+// This allows the backend to connect to an external PostgreSQL server (separate EC2 or RDS)
+// without hardcoding the connection string.
+if (!process.env.DATABASE_URL) {
+  const host = process.env.DATABASE_HOST || 'localhost';
+  const port = process.env.DATABASE_PORT || '5432';
+  const name = process.env.DATABASE_NAME || 'cargotrack';
+  const user = process.env.DATABASE_USER || 'cargotrack';
+  const password = process.env.DATABASE_PASSWORD || 'cargotrack123';
+  process.env.DATABASE_URL = `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${name}?schema=public`;
+  console.log(`[config] DATABASE_URL built from individual vars (host: ${host}:${port})`);
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   jwtSecret: process.env.JWT_SECRET || 'cargotrack-secret-key-change-in-production',
   jwtExpiresIn: (process.env.JWT_EXPIRES_IN || '7d') as SignOptions['expiresIn'],
   uploadDir: process.env.UPLOAD_DIR || '/uploads',
-  databaseUrl: process.env.DATABASE_URL,
   corsOrigin: process.env.CORS_ORIGIN || '*',
   nodeEnv: process.env.NODE_ENV || 'development',
+  // Admin auto-seeding: credentials read from env vars, created on startup if not found
+  adminEmail: process.env.ADMIN_EMAIL || 'admin@cargotrack.com',
+  adminPassword: process.env.ADMIN_PASSWORD || 'admin123',
 };

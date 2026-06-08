@@ -430,6 +430,8 @@ resource "aws_autoscaling_group" "frontend" {
   max_size         = 2
   desired_capacity = 1
 
+  force_delete = true
+
   vpc_zone_identifier = var.web_subnet_ids
 
   target_group_arns = [
@@ -455,6 +457,10 @@ resource "aws_autoscaling_group" "frontend" {
     value               = "Terraform"
     propagate_at_launch = true
   }
+
+  timeouts {
+    delete = "10m"
+  }
 }
 
 resource "aws_autoscaling_group" "backend" {
@@ -464,6 +470,8 @@ resource "aws_autoscaling_group" "backend" {
   min_size         = 1
   max_size         = 2
   desired_capacity = 1
+
+  force_delete = true
 
   vpc_zone_identifier = var.app_subnet_ids
 
@@ -489,6 +497,10 @@ resource "aws_autoscaling_group" "backend" {
     key                 = "ManagedBy"
     value               = "Terraform"
     propagate_at_launch = true
+  }
+
+  timeouts {
+    delete = "10m"
   }
 }
 

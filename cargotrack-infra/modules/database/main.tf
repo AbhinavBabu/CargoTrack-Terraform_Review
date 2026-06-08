@@ -10,6 +10,8 @@ resource "random_password" "db_password" {
   length  = 20
 
   special = true
+
+  override_special = "!#$%^&*()-_=+[]{}<>?"
 }
 
 resource "random_password" "jwt_secret" {
@@ -17,6 +19,8 @@ resource "random_password" "jwt_secret" {
   length = 32
 
   special = true
+
+  override_special = "!#$%^&*()-_=+[]{}<>?"
 }
 
 resource "random_password" "admin_password" {
@@ -24,11 +28,13 @@ resource "random_password" "admin_password" {
   length = 20
 
   special = true
+
+  override_special = "!#$%^&*()-_=+[]{}<>?"
 }
 
 resource "aws_secretsmanager_secret" "database" {
 
-  name                    = "${var.project_name}-database-secret"
+  name                    = "${var.project_name}-database-secret-v2"
   kms_key_id              = aws_kms_key.main.arn
   recovery_window_in_days = 0
 
@@ -48,7 +54,7 @@ resource "aws_secretsmanager_secret_version" "database" {
 
 resource "aws_secretsmanager_secret" "application" {
 
-  name                    = "${var.project_name}-application-secret"
+  name                    = "${var.project_name}-application-secret-v2"
   kms_key_id              = aws_kms_key.main.arn
   recovery_window_in_days = 0
 

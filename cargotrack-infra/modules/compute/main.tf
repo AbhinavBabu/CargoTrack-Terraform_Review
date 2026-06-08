@@ -138,14 +138,14 @@ ENVFILE
 
 chmod 600 /etc/cargotrack.env
 
-docker pull abhinavbabu33/cargotrack-backend:v1
+docker pull abhinavbabu33/cargotrack-backend:v2
 
 docker run -d \
   --name backend \
   --restart unless-stopped \
   --env-file /etc/cargotrack.env \
   -p 4000:4000 \
-  abhinavbabu33/cargotrack-backend:v1
+  abhinavbabu33/cargotrack-backend:v2
 EOF
 }
 

@@ -101,6 +101,24 @@ data "aws_iam_policy_document" "kms_key_policy" {
 
     resources = ["*"]
   }
+
+  statement {
+
+    sid = "AllowDynamoDB"
+
+    principals {
+      type        = "Service"
+      identifiers = ["dynamodb.amazonaws.com"]
+    }
+
+    actions = [
+      "kms:Decrypt",
+      "kms:DescribeKey",
+      "kms:CreateGrant"
+    ]
+
+    resources = ["*"]
+  }
 }
 
 resource "aws_kms_key" "main" {

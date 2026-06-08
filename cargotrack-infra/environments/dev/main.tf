@@ -78,6 +78,14 @@ module "monitoring" {
   kms_key_arn = module.database.kms_key_arn
 }
 
+module "audit" {
+
+  source = "../../modules/audit"
+
+  project_name = var.project_name
+  kms_key_arn  = module.database.kms_key_arn
+}
+
 module "eventing" {
 
   source = "../../modules/eventing"
@@ -85,5 +93,32 @@ module "eventing" {
   project_name = var.project_name
   aws_region   = var.aws_region
 
-  kms_key_arn = module.database.kms_key_arn
+  kms_key_arn      = module.database.kms_key_arn
+  audit_table_name = module.audit.table_name
+  audit_table_arn  = module.audit.table_arn
+}
+
+module "cdn" {
+
+  source = "../../modules/cdn"
+
+  project_name = var.project_name
+  alb_dns_name = module.compute.external_alb_dns_name
+}
+
+module "endpoints" {
+
+  source = "../../modules/endpoints"
+
+  project_name   = var.project_name
+  vpc_id         = module.networking.vpc_id
+  aws_region     = var.aws_region
+  app_subnet_ids = module.networking.app_subnet_ids
+  backend_sg_id  = module.security.backend_sg_id
+
+  private_route_table_ids = [
+    module.networking.web_route_table_id,
+    module.networking.app_route_table_id,
+    module.networking.db_route_table_id,
+  ]
 }

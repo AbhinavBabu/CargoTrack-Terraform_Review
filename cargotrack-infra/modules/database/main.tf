@@ -9,9 +9,7 @@ resource "random_password" "db_password" {
 
   length = 20
 
-  special = true
-
-  override_special = "!#$%^&*()-_=+[]{}<>?"
+  special = false
 }
 
 resource "random_password" "jwt_secret" {
@@ -27,9 +25,7 @@ resource "random_password" "admin_password" {
 
   length = 20
 
-  special = true
-
-  override_special = "!#$%^&*()-_=+[]{}<>?"
+  special = false
 }
 
 resource "aws_secretsmanager_secret" "database" {

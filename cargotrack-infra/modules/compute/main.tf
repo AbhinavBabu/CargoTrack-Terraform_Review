@@ -1,4 +1,4 @@
-data "aws_caller_identity" "current" {}
+﻿data "aws_caller_identity" "current" {}
 
 data "aws_ami" "ubuntu" {
 
@@ -31,7 +31,6 @@ locals {
     ManagedBy = "Terraform"
   }
 
-  # Used in ASG dynamic tag blocks — ASG requires tag {} not tags = {}
   asg_tags = {
     Project   = var.project_name
     ManagedBy = "Terraform"
@@ -253,7 +252,6 @@ resource "aws_iam_role" "ec2_role" {
   tags = local.common_tags
 }
 
-
 resource "aws_iam_role_policy_attachment" "ssm" {
 
   role = aws_iam_role.ec2_role.name
@@ -417,8 +415,6 @@ data "aws_iam_policy_document" "ec2_secrets" {
   }
 }
 
-
-
 resource "aws_iam_role_policy" "ec2_secrets" {
 
   name = "${var.project_name}-ec2-secrets-policy"
@@ -539,5 +535,3 @@ resource "aws_lb_listener" "internal_http" {
     target_group_arn = aws_lb_target_group.backend.arn
   }
 }
-
-

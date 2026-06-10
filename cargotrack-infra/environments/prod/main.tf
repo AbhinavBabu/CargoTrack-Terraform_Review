@@ -1,4 +1,4 @@
-module "networking" {
+﻿module "networking" {
 
   source = "../../modules/networking"
 
@@ -123,34 +123,6 @@ module "endpoints" {
   ]
 }
 
-# ---------------------------------------------------------------------------
-# Terraform Registry Module Integration
-#
-# Source  : terraform-aws-modules/cloudwatch/aws//modules/metric-alarm ~> 5.0
-# Registry: https://registry.terraform.io/modules/terraform-aws-modules/cloudwatch/aws
-#
-# Business justification:
-#   The EventBridge → SQS → Lambda → DynamoDB audit pipeline is mission-
-#   critical in prod. The custom modules/monitoring module monitors EC2 CPU,
-#   RDS CPU, and ALB metrics — but Lambda execution errors on the document
-#   processor are currently unmonitored.
-#
-#   A single Lambda error in prod means a shipment document was processed
-#   but the audit record was NOT written to DynamoDB. This is a silent data
-#   integrity failure: operations staff would have no notification, and the
-#   audit gap would only surface during a compliance review.
-#
-#   This alarm pages the prod ops team within 5 minutes of any Lambda error,
-#   using the same SNS topic already provisioned by modules/monitoring.
-#
-# Why this is a registry module and not a custom resource:
-#   terraform-aws-modules/cloudwatch/aws is the standard community module
-#   for CloudWatch alarms. Using it here demonstrates registry module
-#   integration and reduces boilerplate for future alarm additions.
-#
-# Migration risk: ZERO — prod is never applied. No dev resource is affected.
-# ---------------------------------------------------------------------------
-
 module "lambda_errors_alarm" {
 
   source  = "terraform-aws-modules/cloudwatch/aws//modules/metric-alarm"
@@ -160,12 +132,10 @@ module "lambda_errors_alarm" {
   alarm_description   = "Document processor Lambda errors — audit records may not be written to DynamoDB"
   actions_enabled     = true
 
-  # Re-use the ops SNS topic already created by modules/monitoring
   alarm_actions             = [module.monitoring.sns_topic_arn]
   ok_actions                = [module.monitoring.sns_topic_arn]
   insufficient_data_actions = []
 
-  # AWS/Lambda Errors metric — any error in prod triggers the alarm
   namespace   = "AWS/Lambda"
   metric_name = "Errors"
   statistic   = "Sum"
@@ -174,13 +144,11 @@ module "lambda_errors_alarm" {
     FunctionName = module.eventing.lambda_function_name
   }
 
-  # Alert after 1 evaluation period (5 min) with at least 1 error
   period              = 300
   evaluation_periods  = 1
   threshold           = 0
   comparison_operator = "GreaterThanThreshold"
 
-  # Missing data means Lambda was never invoked — not an alarm condition
   treat_missing_data = "notBreaching"
 
   tags = {

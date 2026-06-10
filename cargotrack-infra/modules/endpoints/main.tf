@@ -1,10 +1,9 @@
-locals {
+﻿locals {
   common_tags = {
     Project   = var.project_name
     ManagedBy = "Terraform"
   }
 
-  # Interface endpoint service names — keyed by a short logical name
   interface_endpoints = {
     secretsmanager = "com.amazonaws.${var.aws_region}.secretsmanager"
     ssm            = "com.amazonaws.${var.aws_region}.ssm"
@@ -13,11 +12,6 @@ locals {
     kms            = "com.amazonaws.${var.aws_region}.kms"
   }
 }
-
-# ---------------------------------------------------------------------------
-# Security group — attached to all interface endpoints
-# Allows inbound HTTPS (443) from backend EC2 instances only
-# ---------------------------------------------------------------------------
 
 resource "aws_security_group" "endpoints" {
 
@@ -50,12 +44,6 @@ resource "aws_vpc_security_group_egress_rule" "endpoints_all" {
   ip_protocol       = "-1"
 }
 
-# ---------------------------------------------------------------------------
-# S3 Gateway Endpoint
-# Routes to all private route tables — no SG required (gateway type)
-# NAT Gateway is NOT modified or removed; this is an additive route entry
-# ---------------------------------------------------------------------------
-
 resource "aws_vpc_endpoint" "s3" {
 
   vpc_id            = var.vpc_id
@@ -71,11 +59,6 @@ resource "aws_vpc_endpoint" "s3" {
     }
   )
 }
-
-# ---------------------------------------------------------------------------
-# Interface Endpoints — Secrets Manager, SSM, SSMMessages, EC2Messages, KMS
-# Created via for_each; private DNS enabled so SDK calls resolve internally
-# ---------------------------------------------------------------------------
 
 resource "aws_vpc_endpoint" "interface" {
 

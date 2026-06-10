@@ -1,13 +1,9 @@
-locals {
+﻿locals {
   common_tags = {
     Project   = var.project_name
     ManagedBy = "Terraform"
   }
 }
-
-# ---------------------------------------------------------------------------
-# WAFv2 Web ACL — scope must be CLOUDFRONT (us-east-1 — matches deployment)
-# ---------------------------------------------------------------------------
 
 resource "aws_wafv2_web_acl" "main" {
 
@@ -18,7 +14,6 @@ resource "aws_wafv2_web_acl" "main" {
     allow {}
   }
 
-  # Rule 1 — IP reputation list (block known malicious IPs first)
   rule {
 
     name     = "AWSManagedRulesAmazonIpReputationList"
@@ -42,7 +37,6 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
-  # Rule 2 — Common rule set (OWASP Top 10 baseline)
   rule {
 
     name     = "AWSManagedRulesCommonRuleSet"
@@ -73,7 +67,6 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
-  # Rule 3 — Known bad inputs (log4j, SSRF, etc.)
   rule {
 
     name     = "AWSManagedRulesKnownBadInputsRuleSet"
@@ -97,7 +90,6 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
-  # Rule 4 — SQL injection protection
   rule {
 
     name     = "AWSManagedRulesSQLiRuleSet"
@@ -130,10 +122,6 @@ resource "aws_wafv2_web_acl" "main" {
   tags = local.common_tags
 }
 
-# ---------------------------------------------------------------------------
-# CloudFront distribution
-# ---------------------------------------------------------------------------
-
 resource "aws_cloudfront_distribution" "main" {
 
   enabled         = true
@@ -142,10 +130,8 @@ resource "aws_cloudfront_distribution" "main" {
   comment         = "${var.project_name} frontend distribution"
   price_class     = "PriceClass_100"
 
-  # Associate WAF
   web_acl_id = aws_wafv2_web_acl.main.arn
 
-  # Origin — external ALB (HTTP only; ALB has no TLS certificate)
   origin {
 
     origin_id   = "external-alb"
@@ -159,7 +145,6 @@ resource "aws_cloudfront_distribution" "main" {
     }
   }
 
-  # Default cache behaviour — pass-through (SPA + API, fully dynamic)
   default_cache_behavior {
 
     target_origin_id       = "external-alb"
@@ -169,7 +154,6 @@ resource "aws_cloudfront_distribution" "main" {
     allowed_methods = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods  = ["GET", "HEAD"]
 
-    # Forward everything to the origin — no caching
     forwarded_values {
       query_string = true
 
@@ -191,7 +175,6 @@ resource "aws_cloudfront_distribution" "main" {
     }
   }
 
-  # Default CloudFront certificate (*.cloudfront.net) — no ACM / Route53 required
   viewer_certificate {
     cloudfront_default_certificate = true
   }

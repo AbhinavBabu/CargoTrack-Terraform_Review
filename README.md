@@ -9,6 +9,8 @@ A shipment tracking and logistics platform built as a Cloud Architecture Capston
 - **Database**: PostgreSQL with Prisma ORM
 - **Auth**: JWT
 - **Containerization**: Docker & Docker Compose
+- **Infrastructure as Code**: Terraform
+- **Cloud Provider**: AWS
 - **API Docs**: Swagger
 
 ## Quick Start
@@ -100,15 +102,7 @@ cargotracker-v2/
         └── pages/
 ```
 
-## AWS Readiness
 
-The application uses provider abstractions for easy future AWS integration:
-
-| Provider | Current | Future |
-|----------|---------|--------|
-| Storage | LocalStorageProvider (disk) | S3StorageProvider |
-| Notifications | DatabaseNotificationProvider | SNSNotificationProvider |
-| Events | ConsoleLoggerEventPublisher | EventBridgePublisher |
 
 ## API Endpoints
 
@@ -152,28 +146,57 @@ The application uses provider abstractions for easy future AWS integration:
 | API_PORT | 4000 | Backend port |
 | DB_PORT | 5432 | Database port |
 
-## Deployment to AWS EC2
+## Infrastructure (Terraform)
 
-```bash
-# On your EC2 Ubuntu instance:
+This project uses **Terraform** to provision and manage its AWS infrastructure. The infrastructure code is located in the `cargotrack-infra` directory and follows best practices for modularity, reusability, and environment separation.
 
-# 1. Install Docker
-sudo apt update
-sudo apt install -y docker.io docker-compose-plugin
+### Terraform Structure
 
-# 2. Clone and configure
-git clone <repo-url> && cd cargotracker-v2
-cp .env.example .env
-# Edit .env with production values (especially JWT_SECRET)
-
-# 3. Run
-sudo docker compose up -d --build
-
-# 4. Verify
-curl http://localhost/api/health
+```text
+cargotrack-infra/
+├── bootstrap/          # Sets up the remote backend (S3 for state, DynamoDB for locks)
+├── modules/            # Reusable infrastructure components
+│   ├── networking/     # VPC, Subnets, Route Tables, NAT Gateways
+│   ├── security/       # Security Groups
+│   ├── compute/        # Auto Scaling Groups, ALBs, EC2 Instances
+│   ├── database/       # RDS PostgreSQL, Secrets Manager
+│   ├── storage/        # S3 buckets for documents
+│   ├── monitoring/     # CloudWatch alarms and metrics
+│   ├── audit/          # DynamoDB for audit logs
+│   ├── eventing/       # EventBridge for event-driven architecture
+│   ├── cdn/            # CloudFront distributions
+│   └── endpoints/      # VPC Endpoints for private AWS service access
+└── environments/       # Environment-specific deployments
+    ├── dev/            # Development environment configuration
+    └── prod/           # Production environment configuration
 ```
 
-## Stopping
+### Key Terraform Concepts Used
+
+1. **Modules**: The infrastructure is broken down into functional, reusable modules (e.g., `networking`, `compute`, `database`). This encapsulates complexity and allows the same code to be reused across different environments.
+2. **Environments (Workspaces/Directories)**: We use directory-based environment separation (`environments/dev`, `environments/prod`). Each environment calls the modules with specific variables (e.g., different instance sizes, VPC CIDRs) while maintaining consistent architecture.
+3. **Remote State Backend**: The `bootstrap` directory configures an S3 bucket to store the Terraform state (`terraform.tfstate`) securely, and a DynamoDB table for state locking to prevent concurrent modifications when multiple developers are applying changes.
+4. **Data Sources**: Terraform data sources are used to dynamically fetch information like current AWS region, available Availability Zones, and existing AMIs.
+5. **Variables and Outputs**: Input variables (`variables.tf`) allow customization of modules per environment. Outputs (`outputs.tf`) are used to pass information between modules (e.g., passing the VPC ID from the networking module to the compute module).
+
+### How to Deploy Infrastructure
+
+1. **Bootstrap the Backend (One-time setup per AWS account):**
+   ```bash
+   cd cargotrack-infra/bootstrap
+   terraform init
+   terraform apply
+   ```
+
+2. **Deploy an Environment (e.g., Dev):**
+   ```bash
+   cd cargotrack-infra/environments/dev
+   terraform init    # Initializes the remote backend and modules
+   terraform plan    # Shows the execution plan
+   terraform apply   # Provisions the infrastructure
+   ```
+
+## Stopping Local Environment
 
 ```bash
 docker compose down          # Stop containers
